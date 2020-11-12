@@ -46,7 +46,7 @@ L=0.381
 a=0.15
 
 #velocidades generales
-u=0.5*np.ones((t.shape[0],t.shape[1]))
+u=-0.2*np.ones((t.shape[0],t.shape[1]))
 w=0*np.ones((t.shape[0],t.shape[1]))
 
 #velocidades de cada rueda
@@ -57,6 +57,11 @@ w_l=0*np.ones((t.shape[0],t.shape[1]))
 x=np.zeros((t.shape[0],t.shape[1]+1))
 y=np.zeros((t.shape[0],t.shape[1]+1))
 phi=np.zeros((t.shape[0],t.shape[1]+1))
+
+#DEFINICION DE LOS ERRORES DE CONTROL
+
+herrx=np.zeros((t.shape[0],t.shape[1]))
+herry=np.zeros((t.shape[0],t.shape[1]))
 
 def grafica(sty,titulo,x,y,etiqueta,ejex,ejey,color):
     mpl.style.use(sty)
@@ -84,16 +89,52 @@ if robot.step(timestep) != -1:
     phi[0,0]=imu.getRollPitchYaw()[2]
     x[0,0]=x_real+a*np.cos(phi[0,0])
     y[0,0]=y_real+a*np.sin(phi[0,0])
+    
+
 
 def conversion(v,r,L):
     T=np.matrix([[r/2,r/2],[r/L,-r/L]])
     tranformacion_ruedas=np.linalg.inv(T)@v
     return tranformacion_ruedas[0,0],tranformacion_ruedas[1,0]
+    
+def controlador(h,hd,hdp,q,a,k1,k2):
+    K1=k1*np.eye(2,2)
+    K2=k2*np.eye(2,2)
+    herr=hd-h
+    J=np.matrix([[np.cos(q),-a*np.sin(q)],[np.sin(q),a*np.cos(q)]])
+    control=np.linalg.inv(J)@(hdp+K2@np.tanh(np.linalg.inv(K2)@K1@herr))
+    return control[0,0], control[1,0]
+    
+#Trayectoria de referencia del sistema
+xd=1*np.cos(0.6*t)
+yd=1*np.sin(0.6*t)
+
+xd_p=-1*0.6*np.sin(0.6*t)
+yd_p=1*0.6*np.cos(0.6*t)
+# Definicion de las ganancias del controlador
+k1=1
+k2=0.5
 
 for k in range(0,t.shape[1]):
     if robot.step(timestep) != -1:
+        # Seccion para almacenar los valores de los errors del sistema
+        herrx[0,k]=xd[0,k]-x[0,k]
+        herry[0,k]=yd[0,k]-y[0,k]
+
+        # Definicion del vector de posiciones
+        h=np.array([[x[0,k]],[y[0,k]]])
+
+        #Definicion del vector de posiciones deseadas
+        hd=np.array([[xd[0,k]],[yd[0,k]]])
+
+        # Definicion de la derivada de la posicion deseada
+        hdp=np.array([[xd_p[0,k]],[yd_p[0,k]]])
+
+        u[0,k],w[0,k]=controlador(h,hd,hdp,phi[0,k],a,k1,k2)
+
         ## Vector de velocidades del sistema
         v=np.array([[u[0,k]],[w[0,k]]])
+        
         ## conversion de velocidades generales a velocidades angulares de cada rueda
         w_r[0,k],w_l[0,k]=conversion(v,r,L)
         
