@@ -105,6 +105,19 @@ def controlador(h,hd,hdp,q,a,k1,k2):
     control=np.linalg.inv(J)@(hdp+K2@np.tanh(np.linalg.inv(K2)@K1@herr))
     return control[0,0], control[1,0]
     
+def grafica_c(sty,titulo,x,y,etiqueta,ejex,ejey,color,x_1,y_1,etiqueta_1,color_1):
+    mpl.style.use(sty)
+    fig, ax = plt.subplots()
+    ax.set_title(titulo.format(sty), color='0')
+    ax.set_xlabel(ejex)
+    ax.set_ylabel(ejey)
+    ax.plot(x, y, color,label=etiqueta)
+    ax.plot(x_1,y_1,color_1,label=etiqueta_1)
+    ax.plot()
+    ax.grid(linestyle='--', linewidth='0.3', color='black')
+    legend = ax.legend(loc='upper right', shadow=False, fontsize='small')
+    plt.show() 
+       
 #Trayectoria de referencia del sistema
 xd=1*np.cos(0.6*t)
 yd=1*np.sin(0.6*t)
@@ -153,4 +166,12 @@ for k in range(0,t.shape[1]):
 
 wheels[0].setVelocity(0)
 wheels[1].setVelocity(0)
-grafica('default','trayectoria',x[0,:],y[0,:],'$x$','$y$','$trayectoria$','g')
+grafica_c('default','Trayectoria',x[0,:],y[0,:],'$\mathbf{\eta(t)}$','$x[m]$','$y[m]$','b',xd[0,:],yd[0,:],'$\mathbf{\eta_{d}(t)}$','g')
+grafica_c('default','Trayectoria',t[0,:],herrx[0,:],'$E_x$','$t[s]$','$E$','b',t[0,:],herry[0,:],'$E_y$','g')
+grafica('default','Velocidad Lineal',t[0,:],u[0,:],'$\mu(t)$','$t[s]$','$[m/s]$','g')
+grafica('default','Velocidad Angular',t[0,:],w[0,:],'$\omega(t)$','$t[s]$','$[rad/s]$','r')
+grafica('default','Velocidad angular rueda derecha',t[0,:],w_r[0,:],'$\omega_{r}(t)$','$t[s]$','$[rad/s]$','r')
+grafica('default','Velocidad angular rueda Izquierda',t[0,:],w_l[0,:],'$\omega_{l}(t)$','$t[s]$','$[rad/s]$','b')
+
+print("FINALIZACION DEL PROGRAMA")
+# Enter here exit cleanup code.
